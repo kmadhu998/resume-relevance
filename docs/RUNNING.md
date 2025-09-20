@@ -1,0 +1,1 @@
+Run `streamlit run src/app.py` after installing requirements and setting .env keys.
