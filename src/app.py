@@ -1,10 +1,15 @@
 import streamlit as st
 st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
-st.write("✅ App started")
 
+try:
+    st.write("✅ App started")
+
+    # Your entire app logic goes here...
+    # All imports, sidebar, buttons, evaluation, etc.
+
+except Exception as e:
+    st.error(f"❌ App crashed: {e}")
 import os
-
-# 🔒 Try importing core modules safely
 try:
     from core.parser import (
         extract_text_from_file,
