@@ -1,41 +1,18 @@
 import streamlit as st
-st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
-
-try:
-    st.write("✅ App started")
-
-    # Your entire app logic goes here...
-    # All imports, sidebar, buttons, evaluation, etc.
-
-except Exception as e:
-    st.error(f"❌ App crashed: {e}")
+from dotenv import load_dotenv
 import os
-try:
-    from core.parser import (
-        extract_text_from_file,
-        normalize_text,
-        extract_skills_from_jd,
-        segment_jd_sections,
-        classify_resume
-    )
-    from core.matcher import simple_hard_match, compute_embedding_similarity
-    from core.scoring import compute_final_score, verdict_from_score
-    from core.feedback import generate_feedback_scaffold
-except Exception as e:
-    st.error(f"❌ Import error: {e}")
+from core.parser import (
+    extract_text_from_file,
+    normalize_text,
+    extract_skills_from_jd,
+    segment_jd_sections,
+    classify_resume
+)
+from core.matcher import simple_hard_match, compute_embedding_similarity
+from core.scoring import compute_final_score, verdict_from_score
+from core.feedback import generate_feedback_scaffold
 
-hf_token = os.environ.get("HUGGINGFACE_TOKEN")
-
-# Optional fallback for local development with .env
-if hf_token is None:
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-        hf_token = os.environ.get("HUGGINGFACE_TOKEN")
-    except ModuleNotFoundError:
-        hf_token = None
-
-st.write(f"Hugging Face token loaded: {'✅' if hf_token else '❌'}")
+load_dotenv()
 
 st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
 st.title('🚀 Automated Resume Relevance Check')
@@ -45,10 +22,6 @@ with st.sidebar:
     jd_file = st.file_uploader('Upload Job Description (PDF/DOCX/TXT)', type=['pdf', 'docx', 'txt'])
     jd_text_input = st.text_area('Or paste JD text here', height=150)
     resume_files = st.file_uploader('Upload Resume(s) (PDF/DOCX)', type=['pdf', 'docx'], accept_multiple_files=True)
-
-    debug_mode = st.checkbox("🔍 Enable debug mode")
-    if debug_mode:
-        st.write("Debug mode is ON")
 
     # 🔥 Auto Skill Extraction
     if st.button('Auto-extract skills from JD'):
@@ -68,6 +41,7 @@ with st.sidebar:
     if 'auto_good' in st.session_state:
         st.markdown(f"**Auto GOOD-TO-HAVE skills:** {', '.join(st.session_state['auto_good'])}")
 
+# Skill inputs (pre-filled if auto-extracted)
 must_have = st.text_input('Comma-separated MUST-HAVE skills', 
                           ', '.join(st.session_state.get('auto_must', ['python', 'sql', 'ml'])))
 good_have = st.text_input('Comma-separated GOOD-TO-HAVE skills', 
@@ -120,9 +94,6 @@ if st.button('Evaluate Resume(s)'):
         st.success('✅ Evaluation complete. Scroll down to view the results.')
 
 st.header('📁 Evaluations')
-if not st.session_state['evaluations']:
-    st.info("No evaluations yet. Upload resumes and click 'Evaluate Resume(s)' to begin.")
-
 for i, e in enumerate(st.session_state['evaluations']):
     st.subheader(f"{i+1}. {e['resume_name']} — {e['score']} ({e['verdict']})")
     st.markdown(f"**Resume Type:** {e['resume_type']}")
