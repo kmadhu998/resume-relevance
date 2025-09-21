@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
 st.write("✅ App started")
 
 import os
