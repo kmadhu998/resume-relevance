@@ -1,19 +1,23 @@
 import streamlit as st
-import os
-from core.parser import (
-    extract_text_from_file,
-    normalize_text,
-    extract_skills_from_jd,
-    segment_jd_sections,
-    classify_resume
-)
-from core.matcher import simple_hard_match, compute_embedding_similarity
-from core.scoring import compute_final_score, verdict_from_score
-from core.feedback import generate_feedback_scaffold
+st.write("✅ App started")
 
-# -------------------------------
-# Load Hugging Face token safely
-# -------------------------------
+import os
+
+# 🔒 Try importing core modules safely
+try:
+    from core.parser import (
+        extract_text_from_file,
+        normalize_text,
+        extract_skills_from_jd,
+        segment_jd_sections,
+        classify_resume
+    )
+    from core.matcher import simple_hard_match, compute_embedding_similarity
+    from core.scoring import compute_final_score, verdict_from_score
+    from core.feedback import generate_feedback_scaffold
+except Exception as e:
+    st.error(f"❌ Import error: {e}")
+
 hf_token = os.environ.get("HUGGINGFACE_TOKEN")
 
 # Optional fallback for local development with .env
@@ -25,17 +29,20 @@ if hf_token is None:
     except ModuleNotFoundError:
         hf_token = None
 
+st.write(f"Hugging Face token loaded: {'✅' if hf_token else '❌'}")
+
 st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
 st.title('🚀 Automated Resume Relevance Check')
 
-# -------------------------------
-# Sidebar for uploads
-# -------------------------------
 with st.sidebar:
     st.markdown('## 📂 Upload Inputs')
     jd_file = st.file_uploader('Upload Job Description (PDF/DOCX/TXT)', type=['pdf', 'docx', 'txt'])
     jd_text_input = st.text_area('Or paste JD text here', height=150)
     resume_files = st.file_uploader('Upload Resume(s) (PDF/DOCX)', type=['pdf', 'docx'], accept_multiple_files=True)
+
+    debug_mode = st.checkbox("🔍 Enable debug mode")
+    if debug_mode:
+        st.write("Debug mode is ON")
 
     # 🔥 Auto Skill Extraction
     if st.button('Auto-extract skills from JD'):
@@ -55,9 +62,6 @@ with st.sidebar:
     if 'auto_good' in st.session_state:
         st.markdown(f"**Auto GOOD-TO-HAVE skills:** {', '.join(st.session_state['auto_good'])}")
 
-# -------------------------------
-# Skill inputs
-# -------------------------------
 must_have = st.text_input('Comma-separated MUST-HAVE skills', 
                           ', '.join(st.session_state.get('auto_must', ['python', 'sql', 'ml'])))
 good_have = st.text_input('Comma-separated GOOD-TO-HAVE skills', 
@@ -72,9 +76,6 @@ def get_jd_text():
         return normalize_text(txt)
     return jd_text_input.strip()
 
-# -------------------------------
-# Run evaluation
-# -------------------------------
 st.header('📊 Run Evaluation')
 if st.button('Evaluate Resume(s)'):
     jd_text = get_jd_text()
@@ -112,10 +113,10 @@ if st.button('Evaluate Resume(s)'):
 
         st.success('✅ Evaluation complete. Scroll down to view the results.')
 
-# -------------------------------
-# Display evaluations
-# -------------------------------
 st.header('📁 Evaluations')
+if not st.session_state['evaluations']:
+    st.info("No evaluations yet. Upload resumes and click 'Evaluate Resume(s)' to begin.")
+
 for i, e in enumerate(st.session_state['evaluations']):
     st.subheader(f"{i+1}. {e['resume_name']} — {e['score']} ({e['verdict']})")
     st.markdown(f"**Resume Type:** {e['resume_type']}")
