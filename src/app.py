@@ -1,5 +1,4 @@
 import streamlit as st
-from dotenv import load_dotenv
 import os
 from core.parser import (
     extract_text_from_file,
@@ -12,11 +11,26 @@ from core.matcher import simple_hard_match, compute_embedding_similarity
 from core.scoring import compute_final_score, verdict_from_score
 from core.feedback import generate_feedback_scaffold
 
-load_dotenv()
+# -------------------------------
+# Load Hugging Face token safely
+# -------------------------------
+hf_token = os.environ.get("HUGGINGFACE_TOKEN")
+
+# Optional fallback for local development with .env
+if hf_token is None:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        hf_token = os.environ.get("HUGGINGFACE_TOKEN")
+    except ModuleNotFoundError:
+        hf_token = None
 
 st.set_page_config(page_title='Resume Relevance MVP', layout='wide')
 st.title('🚀 Automated Resume Relevance Check')
 
+# -------------------------------
+# Sidebar for uploads
+# -------------------------------
 with st.sidebar:
     st.markdown('## 📂 Upload Inputs')
     jd_file = st.file_uploader('Upload Job Description (PDF/DOCX/TXT)', type=['pdf', 'docx', 'txt'])
@@ -41,7 +55,9 @@ with st.sidebar:
     if 'auto_good' in st.session_state:
         st.markdown(f"**Auto GOOD-TO-HAVE skills:** {', '.join(st.session_state['auto_good'])}")
 
-# Skill inputs (pre-filled if auto-extracted)
+# -------------------------------
+# Skill inputs
+# -------------------------------
 must_have = st.text_input('Comma-separated MUST-HAVE skills', 
                           ', '.join(st.session_state.get('auto_must', ['python', 'sql', 'ml'])))
 good_have = st.text_input('Comma-separated GOOD-TO-HAVE skills', 
@@ -56,6 +72,9 @@ def get_jd_text():
         return normalize_text(txt)
     return jd_text_input.strip()
 
+# -------------------------------
+# Run evaluation
+# -------------------------------
 st.header('📊 Run Evaluation')
 if st.button('Evaluate Resume(s)'):
     jd_text = get_jd_text()
@@ -93,6 +112,9 @@ if st.button('Evaluate Resume(s)'):
 
         st.success('✅ Evaluation complete. Scroll down to view the results.')
 
+# -------------------------------
+# Display evaluations
+# -------------------------------
 st.header('📁 Evaluations')
 for i, e in enumerate(st.session_state['evaluations']):
     st.subheader(f"{i+1}. {e['resume_name']} — {e['score']} ({e['verdict']})")
